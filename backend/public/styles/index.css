@@ -1,0 +1,14 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body{
+    max-width: 100vw;
+    width: 100vw;
+    height: 100%;
+    overflow-x: hidden;
+    background: #3b3b3b;
+    color: #dcdcdc;
+}
