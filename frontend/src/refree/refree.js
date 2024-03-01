@@ -21,6 +21,28 @@ export default class Refree {
     }
   }
 
+  isEnPassantMove(px, py, x, y, type, team, boardState) {
+    const pawnDirection = team === "OUR" ? 1 : -1;
+
+    if (type === "PAWN") {
+      if ((x - px === -1 || x - px === 1) && y - py === pawnDirection) {
+        const piece = boardState.find(
+          (p) => p.x === x && p.y === y - pawnDirection && p.enPassant
+        );
+        if (piece) {
+          return true;
+        }
+      }
+    }
+
+    // if the attacking piece is a pawn
+    // Check if upper left/right or lower left/right
+    // if a piece is under or above the attacked tile
+    // if the attacked piece has made a enpassant move in a previous turn
+
+    return false;
+  }
+
   /**
    *
    * @param {*} px previous piece location x axis

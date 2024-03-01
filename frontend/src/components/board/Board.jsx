@@ -26,6 +26,7 @@ function Board() {
       y: 6,
       type: "PAWN",
       team: "OPPONENT",
+      enPassant: false,
     });
   }
   for (let i = 0; i < 8; i++) {
@@ -36,6 +37,7 @@ function Board() {
       y: 1,
       type: "PAWN",
       team: "OUR",
+      enPassant: false,
     });
   }
 
@@ -176,13 +178,49 @@ function Board() {
           pieces
         );
 
-        if (validMove) {
+        const isEnPassantMove = refree.isEnPassantMove(
+          gridX,
+          gridY,
+          x,
+          y,
+          currentPiece.type,
+          currentPiece.team,
+          pieces
+        );
+        const pawnDirection = currentPiece.team === "OUR" ? 1 : -1;
+        if (isEnPassantMove) {
+          const updatedPieces = pieces.reduce((result, piece) => {
+            if (piece.x === gridX && piece.y === gridY) {
+              piece.enPassant = false;
+              piece.x = x;
+              piece.y = y;
+              result.push(piece);
+            } else if (!(piece.x === x && piece.y === y - pawnDirection)) {
+              if (piece.type === "PAWN") {
+                piece.enPassant = false;
+              }
+              // Keep other pieces that do not match the dropped position
+              result.push(piece);
+            }
+            return result;
+          }, []);
+          setPieces(updatedPieces);
+        } else if (validMove) {
           // attacks piece position and if the piece is attacked removes it
           const updatedPieces = pieces.reduce((result, piece) => {
-            if (piece.x === currentPiece.x && piece.y === currentPiece.y) {
+            if (piece.x === gridX && piece.y === gridY) {
+              if (Math.abs(gridY - y) === 2 && piece.type === "PAWN") {
+                // SPECIAL MOVE
+                piece.enPassant = true;
+              } else {
+                piece.enPassant = false;
+              }
               // Update the position of the current piece
               result.push({ ...piece, x, y });
             } else if (!(piece.x === x && piece.y === y)) {
+              if (piece.type === "PAWN") {
+                piece.enPassant = false;
+              }
               // Keep other pieces that do not match the dropped position
               result.push(piece);
             }
