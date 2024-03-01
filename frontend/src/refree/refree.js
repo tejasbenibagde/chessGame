@@ -21,13 +21,20 @@ export default class Refree {
     }
   }
 
-  isEnPassantMove(px, py, x, y, type, team, boardState) {
+  isEnPassantMove(initialPosition, desiredPosition, type, team, boardState) {
     const pawnDirection = team === "OUR" ? 1 : -1;
 
     if (type === "PAWN") {
-      if ((x - px === -1 || x - px === 1) && y - py === pawnDirection) {
+      if (
+        (desiredPosition.x - initialPosition.x === -1 ||
+          desiredPosition.x - initialPosition.x === 1) &&
+        desiredPosition.y - initialPosition.y === pawnDirection
+      ) {
         const piece = boardState.find(
-          (p) => p.x === x && p.y === y - pawnDirection && p.enPassant
+          (p) =>
+            p.x === desiredPosition.x &&
+            p.y === desiredPosition.y - pawnDirection &&
+            p.enPassant
         );
         if (piece) {
           return true;
@@ -35,54 +42,84 @@ export default class Refree {
       }
     }
 
-    // if the attacking piece is a pawn
-    // Check if upper left/right or lower left/right
-    // if a piece is under or above the attacked tile
-    // if the attacked piece has made a enpassant move in a previous turn
-
     return false;
   }
 
   /**
    *
-   * @param {*} px previous piece location x axis
-   * @param {*} py previous piece location y axis
-   * @param {*} x current piece location x axis
-   * @param {*} y current piece location y axis
+   * @param {*} grabPosition previous tile of piece from where it was grabbed; type: (object) {x,y}
+   * @param {*} desiredPosition desired position of piece where you want to drop it; type: (object) {x,y}
    * @param {*} type piece type
    * @returns true if the move is valid, false otherwise
    */
 
-  isvalidMove(px, py, x, y, type, team, boardState) {
+  isValidMove(grabPosition, desiredPosition, type, team, boardState) {
     if (type === "PAWN") {
       const specialRow = team === "OUR" ? 1 : 6;
       const pawnDirection = team === "OUR" ? 1 : -1;
 
       // MOVEMENT LOGIC
-      if (px === x && py === specialRow && y - py === 2 * pawnDirection) {
+      if (
+        grabPosition.x === desiredPosition.x &&
+        grabPosition.y === specialRow &&
+        desiredPosition.y - grabPosition.y === 2 * pawnDirection
+      ) {
         if (
-          !this.tileIsOccupied(x, y, boardState) &&
-          !this.tileIsOccupied(x, y - pawnDirection, boardState)
+          !this.tileIsOccupied(
+            desiredPosition.x,
+            desiredPosition.y,
+            boardState
+          ) &&
+          !this.tileIsOccupied(
+            desiredPosition.x,
+            desiredPosition.y - pawnDirection,
+            boardState
+          )
         ) {
           return true;
         }
-      } else if (px === x && y - py === pawnDirection) {
-        if (!this.tileIsOccupied(x, y, boardState)) {
+      } else if (
+        grabPosition.x === desiredPosition.x &&
+        desiredPosition.y - grabPosition.y === pawnDirection
+      ) {
+        if (
+          !this.tileIsOccupied(desiredPosition.x, desiredPosition.y, boardState)
+        ) {
           return true;
         }
       }
 
       // ATTACK LOGIC
-      else if (x - px === -1 && y - py === pawnDirection) {
+      else if (
+        desiredPosition.x - grabPosition.x === -1 &&
+        desiredPosition.y - grabPosition.y === pawnDirection
+      ) {
         // ATTACK IN  UPPER OR BOTTOM LEFT CORNER
         // console.log("UPPER OR BOTTOM LEFT CORNER");
-        if (this.tileIsOccupiedByOpponent(x, y, boardState, team)) {
+        if (
+          this.tileIsOccupiedByOpponent(
+            desiredPosition.x,
+            desiredPosition.y,
+            boardState,
+            team
+          )
+        ) {
           return true;
         }
-      } else if (x - px === 1 && y - py === pawnDirection) {
+      } else if (
+        desiredPosition.x - grabPosition.x === 1 &&
+        desiredPosition.y - grabPosition.y === pawnDirection
+      ) {
         // ATTACK IN  UPPER OR BOTTOM RIGHT CORNER
         // console.log("UPPER OR BOTTOM RIGHT CORNER");
-        if (this.tileIsOccupiedByOpponent(x, y, boardState, team)) {
+        if (
+          this.tileIsOccupiedByOpponent(
+            desiredPosition.x,
+            desiredPosition.y,
+            boardState,
+            team
+          )
+        ) {
           return true;
         }
       }

@@ -1,124 +1,36 @@
 import React, { useRef, useState } from "react";
 import Tile from "../tiles/Tile";
 import Refree from "../../refree/refree";
+import {
+  xAxis,
+  yAxis,
+  initialBoardState,
+  GRID_SIZE,
+  BOARD_SIZE,
+  samePosition,
+} from "../../constants";
 
 function Board() {
   const [activePiece, setActivePiece] = useState(null);
-  const [gridX, setGridX] = useState(0);
-  const [gridY, setGridY] = useState(0);
+  const [grabPosition, setGrabPosition] = useState({ x: -1, y: -1 });
   const chessBoardRef = useRef(null);
   const board = [];
 
   const refree = new Refree();
 
-  // const pieces = [];
-  const xAxis = ["a", "b", "c", "d", "e", "f", "g", "h"];
-  const yAxis = ["1", "2", "3", "4", "5", "6", "7", "8"];
-
-  const initialBoardState = [];
-
-  // Pawns
-  for (let i = 0; i < 8; i++) {
-    // Black
-    initialBoardState.push({
-      image: "pieces/B_pawn.png",
-      x: i,
-      y: 6,
-      type: "PAWN",
-      team: "OPPONENT",
-      enPassant: false,
-    });
-  }
-  for (let i = 0; i < 8; i++) {
-    // White
-    initialBoardState.push({
-      image: "pieces/W_pawn.png",
-      x: i,
-      y: 1,
-      type: "PAWN",
-      team: "OUR",
-      enPassant: false,
-    });
-  }
-
-  for (let i = 0; i <= 1; i++) {
-    const teamType = i === 0 ? "OPPONENT" : "OUR";
-    let color = teamType === "OUR" ? "W" : "B";
-    let y = teamType === "OUR" ? 0 : 7;
-    // Rooks
-    initialBoardState.push({
-      image: `pieces/${color}_rook.png`,
-      x: 0,
-      y,
-      type: "ROOK",
-      team: teamType,
-    });
-    initialBoardState.push({
-      image: `pieces/${color}_rook.png`,
-      x: 7,
-      y,
-      type: "ROOK",
-      team: teamType,
-    });
-    // Knights
-    initialBoardState.push({
-      image: `pieces/${color}_knight.png`,
-      x: 1,
-      y,
-      type: "KNIGHT",
-      team: teamType,
-    });
-    initialBoardState.push({
-      image: `pieces/${color}_knight.png`,
-      x: 6,
-      y,
-      type: "KNIGHT",
-      team: teamType,
-    });
-    // Bishops
-    initialBoardState.push({
-      image: `pieces/${color}_bishop.png`,
-      x: 2,
-      y,
-      type: "BISHOP",
-      team: teamType,
-    });
-    initialBoardState.push({
-      image: `pieces/${color}_bishop.png`,
-      x: 5,
-      y,
-      type: "BISHOP",
-      team: teamType,
-    });
-    // Queen
-    initialBoardState.push({
-      image: `pieces/${color}_queen.png`,
-      x: 3,
-      y,
-      type: "QUEEN",
-      team: teamType,
-    });
-    // King
-    initialBoardState.push({
-      image: `pieces/${color}_king.png`,
-      x: 4,
-      y,
-      type: "KING",
-      team: teamType,
-    });
-  }
   const [pieces, setPieces] = useState(initialBoardState);
 
   function grabbingPiece(e) {
     const element = e.target;
     const chessBoard = chessBoardRef.current;
     if (element.classList.contains("piece") && chessBoard) {
-      setGridX(Math.floor((e.clientX - chessBoard.offsetLeft) / 80));
-      setGridY(
-        Math.abs(Math.ceil((e.clientY - chessBoard.offsetTop - 640) / 80))
+      const grabX = Math.floor((e.clientX - chessBoard.offsetLeft) / GRID_SIZE);
+      const grabY = Math.abs(
+        Math.ceil((e.clientY - chessBoard.offsetTop - BOARD_SIZE) / GRID_SIZE)
       );
-      const x = e.clientX - 40;
-      const y = e.clientY - 40;
+      setGrabPosition({ x: grabX, y: grabY });
+      const x = e.clientX - GRID_SIZE / 2;
+      const y = e.clientY - GRID_SIZE / 2;
       element.style.position = " absolute";
       element.style.left = `${x}px`;
       element.style.top = `${y}px`;
@@ -134,8 +46,8 @@ function Board() {
       const minY = chessBoard.offsetTop;
       const maxX = minX + chessBoard.clientWidth - 70;
       const maxY = minY + chessBoard.clientHeight - 70;
-      const x = e.clientX - 40;
-      const y = e.clientY - 40;
+      const x = e.clientX - GRID_SIZE / 2;
+      const y = e.clientY - GRID_SIZE / 2;
       activePiece.style.position = " absolute";
 
       if (x < minX) {
@@ -159,30 +71,26 @@ function Board() {
   function dropPiece(e) {
     const chessBoard = chessBoardRef.current;
     if (activePiece && chessBoard) {
-      const x = Math.floor((e.clientX - chessBoard.offsetLeft) / 80);
+      const x = Math.floor((e.clientX - chessBoard.offsetLeft) / GRID_SIZE);
       const y = Math.abs(
-        Math.ceil((e.clientY - chessBoard.offsetTop - 640) / 80)
+        Math.ceil((e.clientY - chessBoard.offsetTop - BOARD_SIZE) / GRID_SIZE)
       );
+      const desiredPosition = { x, y };
 
-      const currentPiece = pieces.find((p) => p.x === gridX && p.y === gridY);
-      const attackedPiece = pieces.find((p) => p.x === x && p.y === y);
+      const currentPiece = pieces.find((p) => samePosition(p, grabPosition));
 
       if (currentPiece) {
-        const validMove = refree.isvalidMove(
-          gridX,
-          gridY,
-          x,
-          y,
+        const validMove = refree.isValidMove(
+          grabPosition,
+          desiredPosition,
           currentPiece.type,
           currentPiece.team,
           pieces
         );
 
         const isEnPassantMove = refree.isEnPassantMove(
-          gridX,
-          gridY,
-          x,
-          y,
+          grabPosition,
+          desiredPosition,
           currentPiece.type,
           currentPiece.team,
           pieces
@@ -190,12 +98,12 @@ function Board() {
         const pawnDirection = currentPiece.team === "OUR" ? 1 : -1;
         if (isEnPassantMove) {
           const updatedPieces = pieces.reduce((result, piece) => {
-            if (piece.x === gridX && piece.y === gridY) {
+            if (samePosition(piece, grabPosition)) {
               piece.enPassant = false;
               piece.x = x;
               piece.y = y;
               result.push(piece);
-            } else if (!(piece.x === x && piece.y === y - pawnDirection)) {
+            } else if (!samePosition(piece, { x, y: y - pawnDirection })) {
               if (piece.type === "PAWN") {
                 piece.enPassant = false;
               }
@@ -208,16 +116,13 @@ function Board() {
         } else if (validMove) {
           // attacks piece position and if the piece is attacked removes it
           const updatedPieces = pieces.reduce((result, piece) => {
-            if (piece.x === gridX && piece.y === gridY) {
-              if (Math.abs(gridY - y) === 2 && piece.type === "PAWN") {
-                // SPECIAL MOVE
-                piece.enPassant = true;
-              } else {
-                piece.enPassant = false;
-              }
+            if (samePosition(piece, grabPosition)) {
+              // SPECIAL MOVE
+              piece.enPassant =
+                Math.abs(grabPosition.y - y) === 2 && piece.type === "PAWN";
               // Update the position of the current piece
               result.push({ ...piece, x, y });
-            } else if (!(piece.x === x && piece.y === y)) {
+            } else if (!samePosition(piece, { x, y })) {
               if (piece.type === "PAWN") {
                 piece.enPassant = false;
               }
